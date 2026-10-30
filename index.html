@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VisionChord - AI Gitar Klasik & Hand Tracking</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- MediaPipe Hands CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <header>
+    <div class="logo-group">
+      <div class="logo-badge">🎸</div>
+      <div class="app-title">
+        <h1>VisionChord Klasik</h1>
+        <span>Gitar Klasik Nilon Akustik &bull; AI Hand Tracking</span>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <div class="control-item">
+        <span style="color: #38bdf8; font-weight: 600;">✋ Kiri: Chord</span>
+        <span style="color: var(--text-muted);">&bull;</span>
+        <span style="color: #4ade80; font-weight: 600;">⚡ Kanan: Genjreng</span>
+      </div>
+
+      <div class="control-item">
+        <label for="volume-range">Volume:</label>
+        <input type="range" id="volume-range" min="0" max="1" step="0.05" value="0.9" style="width: 85px;">
+      </div>
+
+      <button id="btn-toggle-cam" class="btn-primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+          <circle cx="12" cy="13" r="4"></circle>
+        </svg>
+        <span>Nyalakan Kamera</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- Camera Viewport & Canvas Overlay -->
+    <div class="viewport-card">
+      <div class="camera-container">
+        <video id="webcam" playsinline></video>
+        <canvas id="canvas-overlay"></canvas>
+
+        <div class="status-overlay">
+          <div class="status-badge">
+            <span class="status-dot" id="cam-status-dot"></span>
+            <span id="cam-status-text">Kamera Siap</span>
+          </div>
+          <div class="status-badge" id="hands-status-badge" style="display: none;">
+            <span id="hands-detected-text">0 Tangan Terdeteksi</span>
+          </div>
+        </div>
+
+        <div class="camera-placeholder" id="placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+          </svg>
+          <p>Klik tombol <strong>"Nyalakan Kamera"</strong> di atas untuk mulai bermain gitar!</p>
+        </div>
+
+        <!-- Indikator Chord Aktif -->
+        <div class="chord-hero-card" id="chord-hero" style="display: none;">
+          <div class="chord-info-left">
+            <div class="chord-letter" id="hero-chord-letter">C</div>
+            <div class="chord-details">
+              <h2 id="hero-chord-name">C Major</h2>
+              <div class="chord-notes" id="hero-chord-notes"></div>
+            </div>
+          </div>
+          <div class="trigger-indicator">
+            <div class="trigger-badge" id="hero-trigger-badge">Siap Digenjreng</div>
+            <span style="font-size: 0.75rem; color: var(--text-muted);" id="hero-gesture-hint">Arahkan tangan kiri untuk chord</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel Samping / Kamus Chord Super Gampang -->
+    <aside class="sidebar">
+      <div class="card">
+        <div class="card-header">
+          <h3>🎼 Chord Jari Anti-Ribet</h3>
+          <span style="font-size: 0.75rem; color: #4ade80;">Tangan Kiri</span>
+        </div>
+        <div class="chord-grid">
+          <div class="chord-item" data-chord="C">
+            <div class="chord-item-top">
+              <span class="chord-item-tag" style="color: #38bdf8;">C Major</span>
+              <span style="font-size: 1.25rem;">☝️</span>
+            </div>
+            <span class="chord-item-desc"><strong>1 Jari:</strong> Telunjuk tegak</span>
+          </div>
+
+          <div class="chord-item" data-chord="Am">
+            <div class="chord-item-top">
+              <span class="chord-item-tag" style="color: #a78bfa;">A Minor</span>
+              <span style="font-size: 1.25rem;">✌️</span>
+            </div>
+            <span class="chord-item-desc"><strong>2 Jari:</strong> Peace / Telunjuk+Tengah</span>
+          </div>
+
+          <div class="chord-item" data-chord="G">
+            <div class="chord-item-top">
+              <span class="chord-item-tag" style="color: #4ade80;">G Major</span>
+              <span style="font-size: 1.25rem;">🤟</span>
+            </div>
+            <span class="chord-item-desc"><strong>3 Jari:</strong> Telunjuk+Tengah+Manis</span>
+          </div>
+
+          <div class="chord-item" data-chord="Em">
+            <div class="chord-item-top">
+              <span class="chord-item-tag" style="color: #f43f5e;">E Minor</span>
+              <span style="font-size: 1.25rem;">🖐️</span>
+            </div>
+            <span class="chord-item-desc"><strong>4 Jari:</strong> Semua tanpa jempol</span>
+          </div>
+
+          <div class="chord-item" data-chord="D">
+            <div class="chord-item-top">
+              <span class="chord-item-tag" style="color: #facc15;">D Major</span>
+              <span style="font-size: 1.25rem;">👍</span>
+            </div>
+            <span class="chord-item-desc"><strong>Jempol:</strong> Thumbs Up saja</span>
+          </div>
+
+          <div class="chord-item" data-chord="F">
+            <div class="chord-item-top">
+              <span class="chord-item-tag" style="color: #fb923c;">F Major</span>
+              <span style="font-size: 1.25rem;">🖐️</span>
+            </div>
+            <span class="chord-item-desc"><strong>5 Jari:</strong> Telapak tangan penuh</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card instructions-card">
+        <div class="card-header">
+          <h3>🎸 Cara Memainkan</h3>
+        </div>
+        <ol>
+          <li><strong>Tangan Kiri (Kunci Nada)</strong>: Tunjukkan jumlah jari di sebelah kiri kamera (1 jari = C, 2 jari = Am, 3 jari = G, dst.).</li>
+          <li><strong>Tangan Kanan (Genjreng)</strong>: Gerakkan tangan kanan ke atas/bawah santai di sisi kanan layar (area dawai) untuk memetik.</li>
+          <li><strong>Suara Gitar Klasik</strong>: Menggunakan simulasi senar nilon akustik dengan resonansi tabung kayu alami.</li>
+        </ol>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    VisionChord Classical Guitar Edition &bull; Anti-Jitter Smoothing &bull; Zero Dependency
+  </footer>
+
+  <script src="audio.js"></script>
+  <script src="gestures.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
